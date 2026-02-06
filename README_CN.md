@@ -1,0 +1,151 @@
+# MimiClaw: $5 芯片上的口袋 AI 助理
+
+**[English](README.md) | [中文](README_CN.md)**
+
+<p align="center">
+  <img src="assets/banner.png" alt="MimiClaw" width="480" />
+</p>
+
+**$5 芯片上的 AI 助理（OpenClaw）。没有 Linux，没有 Node.js，纯 C。**
+
+MimiClaw 把一块小小的 ESP32-S3 开发板变成你的私人 AI 助理。插上 USB 供电，连上 WiFi，通过 Telegram 跟它对话 — 它能处理你丢给它的任何任务，还会随时间积累本地记忆不断进化 — 全部跑在一颗拇指大小的芯片上。
+
+## 认识 MimiClaw
+
+- **小巧** — 没有 Linux，没有 Node.js，没有臃肿依赖 — 纯 C
+- **好用** — 在 Telegram 发消息，剩下的它来搞定
+- **忠诚** — 从记忆中学习，跨重启也不会忘
+- **能干** — USB 供电，0.5W，24/7 运行
+- **可爱** — 一块 ESP32-S3 开发板，$5，没了
+
+## 工作原理
+
+```
+                         ┌─────────────── Agent Loop ───────────────┐
+                         │                                          │
+ ┌───────────┐     ┌─────▼─────┐     ┌─────────┐     ┌─────────┐  │
+ │ Channels  │     │  Message   │     │  Claude  │     │  Tools  │  │
+ │           │────▶│  Queue     │────▶│  (LLM)   │────▶│         │──┘
+ │ Telegram  │     └───────────┘     └────┬─────┘     └────┬────┘
+ │ WebSocket │◀──────────────────────────-│                │
+ └───────────┘        Response            │                │
+                                    ┌─────▼────────────────▼────┐
+                                    │        Context            │
+                                    │  ┌──────────┐ ┌────────┐  │
+                                    │  │  Memory   │ │ Skills │  │
+                                    │  │ SOUL.md   │ │  OTA   │  │
+                                    │  │ USER.md   │ │  CLI   │  │
+                                    │  │ MEMORY.md │ │  ...   │  │
+                                    │  └──────────┘ └────────┘  │
+                                    └───────────────────────────┘
+                                          ESP32-S3 Flash
+```
+
+你在 Telegram 发一条消息，ESP32-S3 通过 WiFi 收到后送进 Agent 循环 — Claude 思考、调用工具、读取记忆 — 再把回复发回来。一切都跑在一颗 $5 的芯片上，所有数据存在本地 Flash。
+
+## 快速开始
+
+### 你需要
+
+- 一块 **ESP32-S3 开发板**，16MB Flash + 8MB PSRAM（如小智 AI 开发板，~¥30）
+- 一根 **USB Type-C 数据线**
+- 一个 **Telegram Bot Token** — 在 Telegram 找 [@BotFather](https://t.me/BotFather) 创建
+- 一个 **Anthropic API Key** — 从 [console.anthropic.com](https://console.anthropic.com) 获取
+
+### 安装
+
+```bash
+# 需要先安装 ESP-IDF:
+# https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/
+
+git clone https://github.com/memovai/mimiclaw.git
+cd mimiclaw
+
+idf.py set-target esp32s3
+idf.py build
+idf.py -p /dev/ttyACM0 flash monitor
+```
+
+### 设置
+
+烧录后会出现串口终端，输入以下命令：
+
+```
+mimi> wifi_set YourWiFiName YourWiFiPassword
+mimi> set_tg_token 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+mimi> set_api_key sk-ant-api03-xxxxx
+mimi> restart
+```
+
+就这样。重启后在 Telegram 找到你的 Bot，开始聊天。
+
+### 代理配置（国内用户）
+
+在国内需要代理才能访问 Telegram 和 Anthropic API。MimiClaw 内置 HTTP CONNECT 隧道支持。
+
+**前提**：局域网内有一个支持 HTTP CONNECT 的代理（Clash Verge、V2Ray 等），并开启了「允许局域网连接」。
+
+```
+mimi> set_proxy 10.0.0.1 7897
+mimi> restart
+```
+
+- `10.0.0.1` — 代理机器的局域网 IP
+- `7897` — 代理的 HTTP 端口（不是 SOCKS 端口）
+
+设置后所有 HTTPS 请求通过 CONNECT 隧道发出，TLS 证书正常验证。清除代理恢复直连：
+
+```
+mimi> clear_proxy
+mimi> restart
+```
+
+> **提示**：确保 ESP32-S3 和代理机器在同一局域网。Clash Verge 在「设置 → 允许局域网」中开启。
+
+### 更多命令
+
+```
+mimi> wifi_status          # 连上了吗？
+mimi> set_model claude-opus-4-6   # 换个模型
+mimi> set_proxy 10.0.0.1 7897     # 可选：通过 HTTP 代理
+mimi> clear_proxy          # 可选：清除代理，直连
+mimi> memory_read          # 看看它记住了什么
+mimi> heap_info            # 还剩多少内存？
+mimi> session_list         # 列出所有会话
+mimi> session_clear 12345  # 删除一个会话
+mimi> restart              # 重启
+```
+
+## 记忆
+
+MimiClaw 把所有数据存为纯文本文件，可以直接读取和编辑：
+
+| 文件 | 说明 |
+|------|------|
+| `SOUL.md` | 机器人的人设 — 编辑它来改变行为方式 |
+| `USER.md` | 关于你的信息 — 姓名、偏好、语言 |
+| `MEMORY.md` | 长期记忆 — 它应该一直记住的事 |
+| `2026-02-05.md` | 每日笔记 — 今天发生了什么 |
+| `tg_12345.jsonl` | 聊天记录 — 你和它的对话 |
+
+## 其他功能
+
+- **WebSocket 网关** — 端口 18789，局域网内用任意 WebSocket 客户端连接
+- **OTA 更新** — WiFi 远程刷固件，无需 USB
+- **双核** — 网络 I/O 和 AI 处理分别跑在不同 CPU 核心
+- **HTTP 代理** — CONNECT 隧道，适配受限网络
+
+## 开发者
+
+技术细节在 `docs/` 文件夹：
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 系统设计、模块划分、任务布局、内存分配、协议、Flash 分区
+- **[docs/TODO.md](docs/TODO.md)** — 功能差距和路线图
+
+## 许可证
+
+MIT
+
+## 致谢
+
+灵感来自 [OpenClaw](https://github.com/openclaw/openclaw) 和 [Nanobot](https://github.com/HKUDS/nanobot)。MimiClaw 为嵌入式硬件重新实现了核心 AI Agent 架构 — 没有 Linux，没有服务器，只有一颗 $5 的芯片。

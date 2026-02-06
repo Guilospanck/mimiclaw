@@ -1,10 +1,12 @@
 # MimiClaw: Pocket AI Assistant on a $5 Chip
 
+**[English](README.md) | [中文](README_CN.md)**
+
 <p align="center">
   <img src="assets/banner.png" alt="MimiClaw" width="480" />
 </p>
 
-**The world's first AI assistant on a $5 chip. No Linux. No Node.js. Just pure C**
+**The world's first AI assistant(OpenClaw) on a $5 chip. No Linux. No Node.js. Just pure C**
 
 MimiClaw turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into USB power, connect to WiFi, and talk to it through Telegram — it handles any task you throw at it and evolves over time with local memory — all on a chip the size of a thumb.
 
@@ -81,7 +83,9 @@ That's it. After restart, find your bot on Telegram and start chatting.
 
 ```
 mimi> wifi_status          # am I connected?
-mimi> set_model claude-sonnet-4-5-20241022   # use a different model
+mimi> set_model claude-opus-4-6   # use a different model
+mimi> set_proxy 10.0.0.1 7897     # optional: route through HTTP proxy
+mimi> clear_proxy          # optional: remove proxy, connect directly
 mimi> memory_read          # see what the bot remembers
 mimi> heap_info            # how much RAM is free?
 mimi> session_list         # list all chat sessions
@@ -106,6 +110,7 @@ MimiClaw stores everything as plain text files you can read and edit:
 - **WebSocket gateway** on port 18789 — connect from your LAN with any WebSocket client
 - **OTA updates** — flash new firmware over WiFi, no USB needed
 - **Dual-core** — network I/O and AI processing run on separate CPU cores
+- **HTTP proxy** — CONNECT tunnel support for restricted networks
 
 ## For Developers
 
@@ -120,4 +125,4 @@ MIT
 
 ## Acknowledgments
 
-Inspired by [OpenClaw](https://github.com/openclaw/openclaw). MimiClaw reimplements the core AI agent architecture for embedded hardware — no Linux, no server, just a $5 chip.
+Inspired by [OpenClaw](https://github.com/openclaw/openclaw) and [Nanobot](https://github.com/HKUDS/nanobot). MimiClaw reimplements the core AI agent architecture for embedded hardware — no Linux, no server, just a $5 chip.

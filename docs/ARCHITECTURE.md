@@ -119,9 +119,13 @@ main/
 │   ├── ws_server.h         WebSocket server API
 │   └── ws_server.c         ESP HTTP server with WS upgrade, client tracking
 │
+├── proxy/
+│   ├── http_proxy.h        Proxy connection API
+│   └── http_proxy.c        HTTP CONNECT tunnel + TLS via esp_tls
+│
 ├── cli/
 │   ├── serial_cli.h        CLI init API
-│   └── serial_cli.c        esp_console REPL with 12 commands
+│   └── serial_cli.c        esp_console REPL with 14 commands
 │
 └── ota/
     ├── ota_manager.h       OTA update API
@@ -134,9 +138,9 @@ main/
 
 | Task               | Core | Priority | Stack  | Description                          |
 |--------------------|------|----------|--------|--------------------------------------|
-| `tg_poll`          | 0    | 5        | 8 KB   | Telegram long polling (30s timeout)  |
-| `agent_loop`       | 1    | 6        | 8 KB   | Message processing + Claude API call |
-| `outbound`         | 0    | 5        | 4 KB   | Route responses to Telegram / WS     |
+| `tg_poll`          | 0    | 5        | 12 KB  | Telegram long polling (30s timeout)  |
+| `agent_loop`       | 1    | 6        | 12 KB  | Message processing + Claude API call |
+| `outbound`         | 0    | 5        | 8 KB   | Route responses to Telegram / WS     |
 | `serial_cli`       | 0    | 3        | 4 KB   | USB serial console REPL              |
 | httpd (internal)   | 0    | 5        | —      | WebSocket server (esp_http_server)   |
 | wifi_event (IDF)   | 0    | 8        | —      | WiFi event handling (ESP-IDF)        |
@@ -208,9 +212,11 @@ Session files are JSONL (one JSON object per line):
 | `wifi_config` | `password`   | WiFi password                           |
 | `tg_config`   | `bot_token`  | Telegram Bot API token                  |
 | `llm_config`  | `api_key`    | Anthropic API key                       |
-| `llm_config`  | `model`      | Model ID (default: claude-opus-4-5-20251101) |
+| `llm_config`  | `model`      | Model ID (default: claude-opus-4-6) |
+| `proxy_config`| `host`       | HTTP proxy hostname/IP               |
+| `proxy_config`| `port`       | HTTP proxy port                      |
 
-All configured via Serial CLI commands: `wifi_set`, `set_tg_token`, `set_api_key`, `set_model`.
+All configured via Serial CLI commands: `wifi_set`, `set_tg_token`, `set_api_key`, `set_model`, `set_proxy`, `clear_proxy`.
 
 ---
 
@@ -257,7 +263,7 @@ Endpoint: `POST https://api.anthropic.com/v1/messages`
 Request format (Anthropic-native, not OpenAI):
 ```json
 {
-  "model": "claude-opus-4-5-20251101",
+  "model": "claude-opus-4-6",
   "max_tokens": 4096,
   "stream": true,
   "system": "<system prompt>",
@@ -295,6 +301,7 @@ app_main()
   ├── memory_store_init()           Verify SPIFFS paths
   ├── session_mgr_init()
   ├── wifi_manager_init()           Init WiFi STA mode + event handlers
+  ├── http_proxy_init()             Load proxy config from NVS
   ├── telegram_bot_init()           Load bot token from NVS
   ├── llm_proxy_init()              Load API key + model from NVS
   ├── agent_loop_init()
@@ -323,6 +330,8 @@ If WiFi credentials are missing or connection times out, the CLI remains availab
 | `set_tg_token <TOKEN>`         | Save Telegram bot token              |
 | `set_api_key <KEY>`            | Save Anthropic API key               |
 | `set_model <MODEL_ID>`         | Set LLM model identifier             |
+| `set_proxy <HOST> <PORT>`      | Set HTTP CONNECT proxy               |
+| `clear_proxy`                  | Remove proxy, use direct connection  |
 | `memory_read`                  | Print MEMORY.md contents             |
 | `memory_write <CONTENT>`       | Overwrite MEMORY.md                  |
 | `session_list`                 | List all session files               |
