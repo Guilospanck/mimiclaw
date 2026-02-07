@@ -55,8 +55,8 @@ You send a message on Telegram. The ESP32-S3 picks it up over WiFi, feeds it int
 ### Install
 
 ```bash
-# You need ESP-IDF installed first:
-# https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/
+# You need ESP-IDF v5.5+ installed first:
+# https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32s3/get-started/
 
 git clone https://github.com/memovai/mimiclaw.git
 cd mimiclaw
