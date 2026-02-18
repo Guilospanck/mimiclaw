@@ -56,7 +56,7 @@
 #define MIMI_AGENT_MAX_HISTORY       20
 #define MIMI_AGENT_MAX_TOOL_ITER     10
 #define MIMI_MAX_TOOL_CALLS          4
-#define MIMI_AGENT_SEND_WORKING_STATUS 0
+#define MIMI_AGENT_SEND_WORKING_STATUS 1
 
 /* Timezone (POSIX TZ format) */
 #define MIMI_TIMEZONE                "PST8PDT,M3.2.0,M11.1.0"
@@ -70,7 +70,7 @@
 #define MIMI_LLM_API_VERSION         "2023-06-01"
 #define MIMI_LLM_STREAM_BUF_SIZE     (32 * 1024)
 #define MIMI_LLM_LOG_VERBOSE_PAYLOAD 0
-#define MIMI_LLM_LOG_PREVIEW_BYTES   256
+#define MIMI_LLM_LOG_PREVIEW_BYTES   160
 
 /* Message Bus */
 #define MIMI_BUS_QUEUE_LEN           16
