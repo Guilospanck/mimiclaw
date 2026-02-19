@@ -205,6 +205,14 @@ MimiClaw 内置 cron 调度器，让 AI 可以自主安排任务。LLM 可以通
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — 系统设计、模块划分、任务布局、内存分配、协议、Flash 分区
 - **[docs/TODO.md](docs/TODO.md)** — 功能差距和路线图
 
+## 贡献
+
+提交 Issue 或 PR 前请先阅读 **[docs/CONTRIBUTE.md](docs/CONTRIBUTE.md)**。
+
+## 变更日志
+
+发布记录与重要变更见 **[docs/CHANGELOG.md](docs/CHANGELOG.md)**。
+
 ## 许可证
 
 MIT
