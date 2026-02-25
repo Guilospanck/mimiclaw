@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_heap_caps.h"
+#include "wifi/wifi_manager.h"
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "nvs.h"
@@ -382,6 +384,16 @@ static void telegram_poll_task(void *arg)
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
+
+        if (!wifi_manager_is_connected()) {
+            ESP_LOGW(TAG, "WiFi disconnected, waiting for reconnect...");
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
+        }
+
+        ESP_LOGI(TAG, "Heap free: %d, min ever: %d",
+                 (int)esp_get_free_heap_size(),
+                 (int)esp_get_minimum_free_heap_size());
 
         char params[128];
         snprintf(params, sizeof(params),

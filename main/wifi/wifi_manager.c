@@ -6,12 +6,14 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_netif.h"
+#include "lwip/ip_addr.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 
 static const char *TAG = "wifi";
 
 static EventGroupHandle_t s_wifi_event_group;
+static esp_netif_t *s_sta_netif = NULL;
 static int s_retry_count = 0;
 static char s_ip_str[16] = "0.0.0.0";
 static bool s_connected = false;
@@ -66,6 +68,24 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         s_retry_count = 0;
         s_connected = true;
 
+        /* Log DHCP-assigned DNS and set fallback if needed */
+        if (s_sta_netif) {
+            esp_netif_dns_info_t dns;
+            esp_netif_get_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &dns);
+            ESP_LOGI(TAG, "DNS main: " IPSTR, IP2STR(&dns.ip.u_addr.ip4));
+            esp_netif_get_dns_info(s_sta_netif, ESP_NETIF_DNS_BACKUP, &dns);
+            ESP_LOGI(TAG, "DNS backup: " IPSTR, IP2STR(&dns.ip.u_addr.ip4));
+
+            /* Override DHCP DNS with Google DNS */
+            esp_netif_dns_info_t override = {0};
+            override.ip.type = IPADDR_TYPE_V4;
+            override.ip.u_addr.ip4.addr = ipaddr_addr("8.8.8.8");
+            esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &override);
+            override.ip.u_addr.ip4.addr = ipaddr_addr("8.8.4.4");
+            esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_BACKUP, &override);
+            ESP_LOGI(TAG, "DNS overridden to 8.8.8.8 / 8.8.4.4");
+        }
+
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
@@ -75,7 +95,7 @@ esp_err_t wifi_manager_init(void)
     s_wifi_event_group = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
-    esp_netif_create_default_wifi_sta();
+    s_sta_netif = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
